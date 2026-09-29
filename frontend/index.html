@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#06080b">
+    <title>Block Spin - Live Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧊%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="grid-bg" aria-hidden="true"></div>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <div class="snow-ground" aria-hidden="true"></div>
+
+    <main class="app">
+        <header class="topbar glass">
+            <div class="brand">
+<div class="logo"><img src="logo.png" alt="Block Spin"></div>
+                <div class="brand-text">
+                    <h1>FolkkyyShop Logs</h1>
+                    <p>ติดตามสถานะไอดีฟาร์มแบบเรียลไทม์</p>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <div class="conn" id="conn" data-state="loading"><span class="dot"></span><span id="conn-text">กำลังเชื่อมต่อ</span></div>
+                <div class="upd">อัปเดตล่าสุด<time id="last-update">--:--:--</time></div>
+                <span id="role-badge" class="role"><i class="fa-solid fa-user"></i> ผู้ชม</span>
+                <button type="button" id="auth-btn" class="btn btn-primary"><i class="fa-solid fa-shield-halved"></i> เข้าสู่ระบบ Admin</button>
+            </div>
+
+            <div class="refresh-bar" aria-hidden="true"><span id="refresh-bar"></span></div>
+        </header>
+
+        <section class="stats" aria-label="สรุปภาพรวม">
+            <article class="stat glass spot">
+                <div class="stat-head"><span>ออนไลน์อยู่</span><i class="fa-solid fa-signal"></i></div>
+                <div class="stat-value mono" id="online-count">0</div>
+                <div class="stat-sub" id="online-sub">&nbsp;</div>
+                <div class="ratio"><i id="online-ratio"></i></div>
+            </article>
+            <article class="stat glass spot tone-rose">
+                <div class="stat-head"><span>ออฟไลน์</span><i class="fa-solid fa-plug-circle-xmark"></i></div>
+                <div class="stat-value mono" id="offline-count">0</div>
+                <div class="stat-sub" id="offline-sub">&nbsp;</div>
+            </article>
+            <article class="stat glass spot tone-violet">
+                <div class="stat-head"><span>เวลาฟาร์มรวม</span><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-value mono" id="total-hours">0.0 ชม.</div>
+                <div class="stat-sub" id="hours-sub">&nbsp;</div>
+            </article>
+            <article class="stat glass spot tone-amber">
+                <div class="stat-head"><span>เงินรวมในธนาคาร</span><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-value mono" id="total-bank">$0</div>
+                <div class="stat-sub" id="bank-sub">&nbsp;</div>
+            </article>
+        </section>
+
+        <section class="panel glass">
+            <div class="toolbar">
+                <h2><i class="fa-solid fa-list-ul"></i> รายชื่อไอดีทั้งหมด</h2>
+                <div class="tools">
+                    <div class="chips" role="group" aria-label="กรองสถานะ">
+                        <button type="button" class="chip active" data-filter="all">ทั้งหมด <span class="n" id="cnt-all">0</span></button>
+                        <button type="button" class="chip" data-filter="online">ออนไลน์ <span class="n" id="cnt-online">0</span></button>
+                        <button type="button" class="chip" data-filter="offline">ออฟไลน์ <span class="n" id="cnt-offline">0</span></button>
+                    </div>
+                    <div class="search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search" placeholder="ค้นหาชื่อไอดี หรือรถ" autocomplete="off" aria-label="ค้นหา">
+                        <kbd>/</kbd>
+                    </div>
+                    <div class="sortbox">
+                        <label class="sr-only" for="sort-select">เรียงตาม</label>
+                        <select id="sort-select">
+                            <option value="status">สถานะ</option>
+                            <option value="username">ชื่อ</option>
+                            <option value="farmSeconds">เวลาฟาร์ม</option>
+                            <option value="bank">เงิน ATM</option>
+                            <option value="fishing">Fishing</option>
+                            <option value="farming">Farming</option>
+                            <option value="shelfStocker">Shelf Stocker Lv</option>
+                            <option value="vehicles">จำนวนรถ</option>
+                        </select>
+                        <button type="button" id="sort-dir" class="btn btn-ghost btn-icon" aria-label="สลับลำดับการเรียง"><i class="fa-solid fa-arrow-down-wide-short"></i></button>
+                    </div>
+                    <button type="button" id="refresh-btn" class="btn btn-ghost btn-icon" title="รีเฟรชข้อมูล" aria-label="รีเฟรชข้อมูล"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-sort="status"><button class="th-btn" type="button">🟢สถานะ <i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th data-sort="username"><button class="th-btn" type="button">👤ชื่อ <i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th class="c" data-sort="farmSeconds"><button class="th-btn" type="button">⏱️เวลา <i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th class="r" data-sort="bank"><button class="th-btn" type="button">💰เงิน ATM<i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th class="c" data-sort="fishing"><button class="th-btn" type="button">🐟Fishing<i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th class="c" data-sort="farming"><button class="th-btn" type="button">🪴Farming<i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th class="c" data-sort="shelfStocker"><button class="th-btn" type="button">📦Shelf Stocker Lv <i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th data-sort="vehicles"><button class="th-btn" type="button">🚗รถที่มี <i class="fa-solid fa-chevron-down"></i></button></th>
+                            <th id="action-header" class="plain c" hidden>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="account-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <p class="foot">ข้อมูลรีเฟรชอัตโนมัติทุก 10 วินาที<span class="kbd-hint"> · กด <span class="mono">/</span> เพื่อค้นหา</span></p>
+    </main>
+
+    <div id="modal" class="modal-back" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal">
+            <div class="modal-icon"><i class="fa-regular fa-trash-can"></i></div>
+            <h3 id="modal-title">ลบไอดีนี้?</h3>
+            <p id="modal-body"></p>
+            <div class="modal-actions">
+                <button type="button" id="modal-cancel" class="btn btn-ghost">ยกเลิก</button>
+                <button type="button" id="modal-ok" class="btn btn-danger">ลบไอดี</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="particles.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
